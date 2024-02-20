@@ -1,38 +1,30 @@
 pipeline {
     agent any
-    
+    tools {
+        nodejs 'nodejs'
+    }
+    environment {
+        SCANNER_HOME= tool 'sonar-scanner'
+    }
+
     stages {
-        stage('Git Checkout') {
+        stage('GitClone files') {
             steps {
                 git 'https://github.com/adikesavanaidug2404/hotstarproject.git'
             }
         }
-        stage('Build&Tag Docker Image') {
+        stage('SonarQube Analysis') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-token', toolName: 'docker') {
-                        sh "docker build -t adikesavanaidug2404/hotstartpro:v1 ."
-                    }
+                withSonarQubeEnv('sonarqube') {
+                    sh "$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectKey=Hotstarpro -Dsonar.projectName=Hotstarpro "
                 }
             }
         }
-        stage('Push Docker Image') {
+        stage('S3 Backup') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-token', toolName: 'docker') {
-                        sh "docker push adikesavanaidug2404/hotstartpro:v1"
-                    }
-                }
-            }
-        }
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-token', toolName: 'docker') {
-                        sh "docker run -d -p 3000:3000 adikesavanaidug2404/hotstartpro:v1"
-                    }
-                }
+                sh 'aws s3 cp /var/lib/jenkins/workspace/hotstarpro/ s3://hotstarpro/hotstarpro/ --recursive'
             }
         }
     }
 }
+
