@@ -30,6 +30,12 @@ pipeline {
             }
         }
         
+        stage('Deploy to Tomcat') {
+            steps {
+                sh "sudo scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/hotstarpro/package.json package-lock.json root@34.207.242.242:/root/tomcat/webapps/"
+            }
+        }
+        
         stage('Docker Image Build&Tag') {
             steps {
                 script {
@@ -50,11 +56,11 @@ pipeline {
             }
         }
         
-        stage('Run the Docker Image(Push to docker container') {
+        stage('Deploy to DockerContainer(Run the DockerImage') {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker-token', toolName: 'docker') {
-                        sh "docker run -d -p 3000:3000 adikesavanaidug2404/hotstarpro:v1"
+                        sh "docker run -d -p 3000:3000 adikesavanaidug2404/hotstarpro:v1 ."
                     }
                 }
             }
